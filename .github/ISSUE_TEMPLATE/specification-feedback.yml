@@ -1,0 +1,46 @@
+name: Specification feedback
+description: Propose a clarification or technical change to the draft specification
+title: "[Feedback]: "
+labels:
+  - feedback
+body:
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feedback category
+      options:
+        - Technical design
+        - Interoperability
+        - Security
+        - Media types or namespace
+        - Editorial clarification
+        - Implementation experience
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What problem are you trying to solve, and who is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: current
+    attributes:
+      label: Relevant specification text
+      description: Link to or quote the smallest relevant section.
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the behavior or wording you recommend.
+  - type: textarea
+    id: impact
+    attributes:
+      label: Compatibility and security impact
+      description: Note implementation, migration, interoperability, or security effects.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Implementation experience or references
+      description: Include public examples or references when available.

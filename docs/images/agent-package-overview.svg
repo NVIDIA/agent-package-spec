@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="460" viewBox="0 0 1120 460" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Package OCI artifact overview</title>
+  <desc id="desc">A native Skill or Plugin directory is packaged unchanged as an OCI payload layer. An OCI package config and manifest artifact type provide inventory, validation, identity, and distribution metadata around it.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,6 L0,12 Z" fill="#334155"/>
+    </marker>
+    <style>
+      .sans { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      .mono { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; }
+      .title { font-size: 25px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-size: 15px; fill: #475569; }
+      .heading { font-size: 17px; font-weight: 700; fill: #0f172a; }
+      .body { font-size: 14px; fill: #334155; }
+      .small { font-size: 12px; fill: #475569; }
+      .code { font-size: 12px; fill: #0f172a; }
+    </style>
+  </defs>
+
+  <rect width="1120" height="460" rx="18" fill="#f8fafc"/>
+  <text x="40" y="44" class="sans title">Native agent content, packaged for OCI distribution</text>
+  <text x="40" y="70" class="sans subtitle">The OCI envelope adds metadata and transport. It does not redefine or rewrite the Skill or Plugin payload.</text>
+
+  <!-- Native source directory -->
+  <rect x="40" y="112" width="320" height="292" rx="14" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <path d="M64 143 h94 l18 20 h160 v225 H64 Z" fill="#ecfccb" stroke="#65a30d" stroke-width="2"/>
+  <text x="84" y="195" class="sans heading">Native Skill or Plugin directory</text>
+
+  <rect x="84" y="216" width="232" height="68" rx="8" fill="#ffffff" stroke="#a3e635"/>
+  <text x="100" y="239" class="sans body" font-weight="700">Skill</text>
+  <text x="100" y="260" class="mono small">SKILL.md · scripts/</text>
+  <text x="100" y="277" class="mono small">references/ · assets/</text>
+
+  <text x="200" y="299" class="sans small" font-weight="700" text-anchor="middle">OR</text>
+
+  <rect x="84" y="306" width="232" height="68" rx="8" fill="#ffffff" stroke="#a3e635"/>
+  <text x="100" y="329" class="sans body" font-weight="700">Plugin</text>
+  <text x="100" y="350" class="mono small">plugin.json · skills/</text>
+  <text x="100" y="367" class="mono small">hooks/ · MCP config</text>
+
+  <text x="84" y="400" class="sans small">Governed by its native payload specification</text>
+
+  <!-- Packaging arrow -->
+  <line x1="386" y1="258" x2="486" y2="258" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="407" y="239" class="sans body" font-weight="700">package</text>
+  <text x="399" y="285" class="sans small">files unchanged</text>
+
+  <!-- OCI artifact -->
+  <rect x="510" y="100" width="570" height="322" rx="16" fill="#ffffff" stroke="#334155" stroke-width="2" stroke-dasharray="7 5"/>
+  <text x="534" y="130" class="sans heading">OCI artifact</text>
+
+  <rect x="534" y="148" width="522" height="74" rx="10" fill="#dbeafe" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="554" y="173" class="sans body" font-weight="700">OCI image manifest</text>
+  <text x="554" y="199" class="mono code">artifactType: application/vnd.agentpackage.[skill|plugin].v1</text>
+
+  <rect x="534" y="236" width="522" height="74" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="554" y="261" class="sans body" font-weight="700">Package config</text>
+  <text x="554" y="283" class="mono code">application/vnd.agentpackage.config.v1+json</text>
+  <text x="554" y="301" class="sans small">payload specification · file inventory and digests · references</text>
+
+  <rect x="534" y="324" width="522" height="74" rx="10" fill="#ecfccb" stroke="#65a30d" stroke-width="1.5"/>
+  <text x="554" y="349" class="sans body" font-weight="700">Payload layer</text>
+  <text x="554" y="371" class="mono code">application/vnd.agentpackage.[skill|plugin].payload.v1.tar+gzip</text>
+  <text x="554" y="389" class="sans small">The same native directory and files, archived without changing their format</text>
+</svg>
