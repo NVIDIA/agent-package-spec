@@ -25,5 +25,7 @@ reviewed confidentially and handled as appropriate to the circumstances.
 
 ## Attribution
 
-This policy is based on the
-[Contributor Covenant](https://www.contributor-covenant.org/), version 1.4.
+This Code of Conduct is adapted from the
+[Contributor Covenant](https://www.contributor-covenant.org/), version 1.4,
+available at
+<https://www.contributor-covenant.org/version/1/4/code-of-conduct/>.
