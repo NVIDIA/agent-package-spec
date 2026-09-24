@@ -197,5 +197,7 @@ current draft-stage process.
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0. See
-[LICENSE](LICENSE).
+This project uses the CC-BY-4.0 AND Apache-2.0 dual-license terms:
+documentation, skills, and assets are licensed under CC-BY-4.0, and source
+code is licensed under Apache-2.0. See [LICENSE](LICENSE) for the complete
+license terms.
