@@ -6,6 +6,10 @@ The Agent Package Specification is currently a draft proposal. The repository
 exists to collect implementation experience and community feedback before any
 claim of adoption or standardization.
 
+The long-term goal is community stewardship under an appropriate open
+governance model. The current repository does not imply that a standards body
+has accepted the proposal or committed to maintaining it.
+
 ## Decision process
 
 Changes are discussed in GitHub issues and proposed through pull requests.

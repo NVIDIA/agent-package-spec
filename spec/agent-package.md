@@ -5,7 +5,9 @@
 
 ## 1. Abstract
 
-This document proposes an initial OCI packaging model for agent skills and agent plugins.
+This document proposes a common format for packaging and distributing agent skills and agent plugins as Open Container Initiative (OCI) artifacts. It preserves their native file formats while adding an immutable distribution unit, typed discovery, a verifiable file inventory, and support for signatures and attestations through existing OCI tooling.
+
+The proposal is intended for community feedback and interoperability work. It does not define a runnable container image or require a particular registry, marketplace, or agent host.
 
 The proposal makes the concrete artifact visible at the OCI manifest boundary:
 
@@ -42,7 +44,7 @@ The proposal should provide:
 - A shared config schema and media type for both artifact types.
 - Immutable, versioned distribution through OCI registries.
 - A complete inventory of the files carried directly by an artifact.
-- Install-time authenticity and integrity verification.
+- Install-time integrity checks and support for authenticity verification.
 - Compatibility with existing Skill and Plugin directory specifications.
 - Marketplace approval through signatures and attestations attached as OCI referrers.
 - Registry-independent artifact content: publishing the same artifact bytes to another registry does not require rebuilding its config.
@@ -69,7 +71,7 @@ This proposal does not attempt to standardize:
 
 **Plugin artifact**: an artifact whose `artifactType` is `application/vnd.agentpackage.plugin.v1` and whose payload is one Plugin.
 
-**Package Config**: the canonical structured JSON config shared by Skill and Plugin artifacts.
+**Package Config**: the structured JSON config shared by Skill and Plugin artifacts. This proposal does not require a canonical JSON serialization; OCI digests identify the exact published bytes.
 
 **Direct payload**: files stored in the artifact's own content layer.
 
@@ -79,7 +81,7 @@ This proposal does not attempt to standardize:
 
 **Artifact digest**: the immutable OCI digest of the artifact manifest.
 
-**Desktop client**: the installer and policy component that pulls, verifies, installs, inventories, updates, and revokes artifacts.
+**Installer**: the client component that pulls, verifies, materializes, and inventories artifacts, and applies local installation policy. It may run in a desktop application, command-line tool, service, or agent host.
 
 ## 6. OCI Profiles
 
@@ -99,7 +101,7 @@ The initial profiles are:
 | `payload.kind` | `agent-skill` | `agent-plugin` |
 | Direct payload | One Skill directory | One Plugin directory |
 
-Each artifact MUST contain exactly one Package Config descriptor and exactly one content layer. The initial profiles do not define dependencies on other artifacts, layer ordering, overlay, or whiteout semantics.
+Each artifact MUST use the OCI Image Manifest structure, with `schemaVersion` set to `2` and `mediaType` set to `application/vnd.oci.image.manifest.v1+json`. It MUST contain exactly one Package Config descriptor and exactly one content layer, using the media types in the table above. The initial profiles do not define dependencies on other artifacts, layer ordering, overlay, or whiteout semantics. The content layer is a gzip-compressed tar archive of the payload, not an OCI filesystem changeset.
 
 The artifact types and content-layer media types are concrete because the outer objects and payloads have different semantics. The config media type is common because the package metadata and validation model are shared.
 
@@ -158,7 +160,7 @@ Both artifact types use:
 application/vnd.agentpackage.config.v1+json
 ```
 
-The JSON shape is:
+The illustrative JSON shape is shown below. Values such as `string`, `URI`, and `agent-skill | agent-plugin` are placeholders, not literal field values or a machine-readable schema.
 
 ```json
 {
@@ -184,6 +186,8 @@ The JSON shape is:
 
 ### 8.1 Required Fields
 
+The Package Config MUST be a JSON object. `payload`, `annotations`, and `extensions` MUST be objects; `files` MUST be an array of objects. `schemaVersion`, the five required payload fields listed in Section 8.2, and each file's `path` and `digest` MUST be present as nonempty strings. When present, `files[].executable` MUST be a boolean. Config annotation values MUST be strings. JSON objects in the Package Config MUST NOT contain duplicate member names.
+
 `schemaVersion` MUST be `agent.package/v1`.
 
 `payload` MUST identify the single materialized payload represented by the artifact.
@@ -198,11 +202,11 @@ The JSON shape is:
 
 `payload.kind` is the shared-config discriminator and MUST agree with the OCI `artifactType`.
 
-`payload.spec` identifies the external payload specification.
+`payload.spec` MUST be an absolute URI identifying the external payload specification or its canonical schema.
 
-`payload.specVersion` identifies the version or profile of that specification.
+`payload.specVersion` identifies the version or profile of that specification. The pair of `payload.spec` and `payload.specVersion` selects validation rules supported by the installer; a URI alone does not establish trust or require downloading a validator.
 
-`payload.root` identifies the root directory inside the materialized tree. The initial profiles use `payload`.
+`payload.root` identifies the payload directory inside the archive and MUST be `payload` in the initial profiles. This archive prefix is not the installed directory name. An installer presents the contents of this directory as the native Skill or Plugin root and preserves any directory-naming requirements of the referenced payload specification. For example, a Skill named `case-triage` is presented in a directory named `case-triage`, with `SKILL.md` directly inside it.
 
 For a Skill, `payload.id` MUST match the Skill name declared by the referenced Skill specification. For a Plugin, it MUST match the Plugin name declared by the referenced Plugin specification.
 
@@ -212,6 +216,8 @@ Every regular file carried directly in `layers[0]` MUST appear exactly once in `
 
 The OCI layer digest verifies the payload archive as transported. Each `files[].digest` verifies the bytes of one regular file after materialization. The file inventory therefore enables a consumer to identify changed files and to detect missing, unexpected, or duplicate files independently of the archive's compression and metadata representation.
 
+When verifying an installed tree, the path after the `payload/` prefix is relative to the native installation root. For example, `payload/SKILL.md` maps to `case-triage/SKILL.md` in the Skill installation shown in Section 9.3.
+
 For `agent.package/v1`, `digest` MUST use the form `sha256:<encoded>`, where `<encoded>` is exactly 64 lowercase hexadecimal characters containing the SHA-256 digest of the regular file's byte sequence. The digest does not include the file path, archive header, timestamps, ownership, permissions, or compression. The Package Config binds each path to its expected content, and its OCI descriptor binds the config to the artifact manifest.
 
 File paths:
@@ -219,11 +225,16 @@ File paths:
 - MUST be relative to the artifact content root.
 - MUST begin with `payload/` in the initial profiles.
 - MUST use `/` as the separator.
-- MUST NOT be absolute, contain `..`, include a platform drive prefix, or resolve outside the payload root.
+- MUST NOT contain empty, `.` or `..` path components, backslashes, NUL characters, or a platform drive prefix.
+- MUST NOT be absolute or resolve outside the payload root.
+
+These rules also apply to effective archive entry paths after processing tar metadata. Directory entries MAY name `payload` itself and MAY have one trailing `/`; they are not listed in `files`. All other directory entries MUST be below `payload/`. An installer MUST reject duplicate entry paths, file/directory conflicts, and paths that cannot be represented distinctly and safely on its target filesystem, including collisions caused by case folding or platform-specific normalization.
 
 Payload archives MUST NOT contain device files, sockets, FIFOs, hard links, or symlinks. A later profile may permit constrained symlinks if there is demonstrated need.
 
 The optional `executable` field records whether any POSIX executable bit is set in the archive entry. It defaults to `false` when omitted. A builder MUST set it to `true` when any executable bit is set, and an installer MUST reject an archive entry whose mode does not match the declared value. Installers MUST NOT execute payload files during installation.
+
+Archive ownership and other permission bits do not authorize privilege changes. Installers MUST NOT restore set-user-ID or set-group-ID bits from the archive. They apply local policy to ownership and other permissions; platforms without POSIX executable bits retain the declared value as metadata.
 
 ### 8.4 Package Config Annotations
 
@@ -253,6 +264,8 @@ Extensions MUST NOT change the meaning of required fields.
 ## 9. Skill Artifact Example
 
 The following artifact packages one Agent Skills-compatible `case-triage` Skill.
+
+The examples in Sections 9 and 10 use placeholder digests and illustrative descriptor sizes. They are not complete, downloadable artifacts. Builders must calculate digests and sizes from the actual config and compressed payload bytes.
 
 ### 9.1 OCI Manifest
 
@@ -293,7 +306,7 @@ The following artifact packages one Agent Skills-compatible `case-triage` Skill.
     "id": "case-triage",
     "kind": "agent-skill",
     "spec": "https://agentskills.io/specification",
-    "specVersion": "1.0",
+    "specVersion": "unversioned",
     "root": "payload"
   },
   "files": [
@@ -316,12 +329,25 @@ The following artifact packages one Agent Skills-compatible `case-triage` Skill.
 }
 ```
 
+The linked Agent Skills specification does not currently declare a numbered format version. `unversioned` is an illustrative profile label, not a version published by that project. An interoperability profile must agree on the supported revision and label before relying on this example for validation.
+
 ### 9.3 Direct And Materialized Layout
 
-For a standalone Skill, the direct and materialized layouts are the same:
+The archive contains:
 
 ```text
 payload/
+  SKILL.md
+  scripts/
+    analyze.py
+  references/
+    policy.md
+```
+
+The installer presents the same files under the native Skill directory name:
+
+```text
+case-triage/
   SKILL.md
   scripts/
     analyze.py
@@ -406,7 +432,7 @@ This example packages one portable Plugin with a root `plugin.json`, two bundled
 
 ### 10.3 Direct And Materialized Layout
 
-The content layer directly contains the complete materialized Plugin layout:
+The content layer contains the complete Plugin payload under the archive prefix `payload/`. The installer presents its contents as the Plugin root, for example `support-operations/`:
 
 ```text
 payload/
@@ -461,21 +487,23 @@ fetch OCI manifest
 
 A conforming installer MUST:
 
-1. Fetch the OCI manifest and recognize or reject its `artifactType` according to local policy.
-2. Resolve a requested tag to an immutable digest before installation.
-3. Verify the manifest and blob digests returned by the registry.
+1. Resolve the requested reference to an immutable manifest digest, preserving any digest supplied by the caller.
+2. Fetch the manifest, verify its bytes against that digest, and require the OCI manifest structure and profile defined in Section 6.
+3. Recognize or reject the manifest's `artifactType` according to local policy, and verify referenced blob digests and descriptor sizes before processing those blobs.
 4. Require `config.mediaType` to be `application/vnd.agentpackage.config.v1+json` for this profile.
 5. Validate the Package Config against `agent.package/v1`.
 6. Reject an `artifactType` and `payload.kind` mismatch.
 7. Require exactly one content layer and verify that its media type matches the artifact profile.
 8. Verify every direct regular file against `files` before committing the installation.
 9. Reject missing, extra, duplicate, or unsafe file paths.
-10. Verify that each direct archive entry's executable mode matches its `files` entry.
-11. Validate the materialized tree against `payload.spec` and `payload.specVersion`.
+10. Verify that each regular file archive entry's executable mode matches its `files` entry.
+11. Select supported validation rules for `payload.spec` and `payload.specVersion`, reject unsupported pairs, and validate the native payload tree, including any directory-naming requirements.
 12. Apply local signature, attestation, approval, and revocation policy to the artifact.
 13. Record the requested reference, resolved artifact digest, verification results, and projection paths in local inventory.
 
 Installers MUST NOT execute package-provided code during installation.
+
+Installers MUST materialize archive entries within an isolated staging root or an equivalently protected store, without following filesystem links outside that root. They MUST apply resource limits during download and decompression, and MUST complete integrity, payload, and policy checks before making an installation available to the host. A failed check MUST NOT leave a partially verified installation active. Installers MUST NOT automatically fetch or execute validators from package-supplied specification URIs; validation uses rules the installer already trusts.
 
 The content archive does not include the Package Config. A client that extracts files into a host directory retains origin and verification metadata in its inventory store. A client that mounts a content-addressed tree may keep the OCI config alongside its internal store, but it does not expose that file as part of the native Skill or Plugin payload unless the payload specification independently requires it.
 
@@ -525,7 +553,7 @@ Example:
 
 ## 15. Security Considerations
 
-- Signatures and attestations prove claims about immutable digests; they do not prove that content is safe.
+- A verified signature authenticates a signed statement about an immutable digest; it does not establish that the statement is true or that the content is safe.
 - Registry association is not trust. Clients must verify signer identity and signed statements.
 - Installers must defend against archive traversal, path confusion, unexpected file types, duplicate paths, decompression bombs, and resource exhaustion.
 - Installers must not execute package content during installation.
@@ -541,14 +569,20 @@ The core Skill/Plugin split and common config are defined by this proposal. The 
 3. What controlled annotation namespace should expose `payload.id` at the manifest level, if any?
 4. Which Plugin specification URI and version negotiation rules should be normative for the first interoperability profile?
 5. What limits should the base profile set for archive size, expanded size, and file count?
+6. How should an interoperability profile identify and pin a revision of an unversioned payload specification, such as Agent Skills?
+7. Should unknown Package Config fields be rejected or ignored, and how should clients handle extensions they do not understand? These rules need to be settled before claiming interoperable v1 implementations.
+8. Should the project publish a machine-readable Package Config schema and complete test artifacts with reproducible digests?
 
 ## 17. References
 
 - [OCI Image Manifest Specification](https://github.com/opencontainers/image-spec/blob/main/manifest.md)
+- [OCI Content Descriptors](https://github.com/opencontainers/image-spec/blob/main/descriptor.md)
 - [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec/blob/main/spec.md)
 - [OCI Annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md)
 - [OpenAI: Package your plugin](https://developers.openai.com/plugins/build/plugins)
 - [Agent Skills Specification](https://agentskills.io/specification)
+- [Agent Plugins Specification](https://agent-plugins.org/specification)
+- [Agent Plugins Manifest Schema, version 1.0.0](https://agent-plugins.org/schemas/1.0.0/plugin.schema.json)
 
 ## Appendix A. Post-Installation Integrity Verification (Non-Normative)
 
@@ -560,7 +594,7 @@ A client that copies files into a conventional directory can recalculate the dig
 
 An implementation might report a changed installation as `managed-modified` and then warn, refuse activation, repair, quarantine, or reinstall it according to local policy. Runtime state, caches, logs, generated files, and user configuration are normally better stored outside the managed payload so intentional changes are not confused with package modification.
 
-An independently signed file included in a native payload, such as `skill.OMS.sig`, may provide another way to verify an extracted directory when the OCI artifact is unavailable. Such a file is part of the payload's own format and is not a second Agent Package inventory. If present, it is itself listed in `files` like any other direct regular file.
+An independently signed file included in a native payload may provide another way to verify an extracted directory when the OCI artifact is unavailable. Its format and trust policy are outside this proposal. It is not a second Agent Package inventory. If present, the signature file is itself listed in `files` like any other direct regular file.
 
 ### A.2 Mounted Or Content-Addressed Installations
 
@@ -580,9 +614,9 @@ local-dev
 managed-modified
 ```
 
-Managed artifacts come from verified marketplace content. Local-dev artifacts are unsigned or locally authored. Managed-modified artifacts began as managed installations but no longer match their verified file inventory.
+Managed artifacts come from OCI artifacts verified under local installation policy, whether obtained from a publisher or a marketplace. Local-dev artifacts are loaded from a local authoring directory outside that managed installation flow; they may be signed or unsigned. Managed-modified artifacts began as managed installations but no longer match their verified file inventory.
 
-A developer mode may load local-dev or managed-modified artifacts. Interfaces and inventory systems should distinguish them from marketplace-approved, integrity-verified content.
+A developer mode may load local-dev or managed-modified artifacts. Interfaces and inventory systems should distinguish them from policy-approved, integrity-verified content.
 
 ## Appendix B. Future Consideration: Composition By Reference (Non-Normative)
 

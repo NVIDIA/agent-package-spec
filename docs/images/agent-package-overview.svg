@@ -36,7 +36,7 @@
   <rect x="84" y="306" width="232" height="68" rx="8" fill="#ffffff" stroke="#a3e635"/>
   <text x="100" y="329" class="sans body" font-weight="700">Plugin</text>
   <text x="100" y="350" class="mono small">plugin.json · skills/</text>
-  <text x="100" y="367" class="mono small">hooks/ · MCP config</text>
+  <text x="100" y="367" class="mono small">mcp.json · assets/</text>
 
   <text x="84" y="400" class="sans small">Governed by its native payload specification</text>
 
@@ -56,7 +56,7 @@
   <rect x="534" y="236" width="522" height="74" rx="10" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1.5"/>
   <text x="554" y="261" class="sans body" font-weight="700">Package config</text>
   <text x="554" y="283" class="mono code">application/vnd.agentpackage.config.v1+json</text>
-  <text x="554" y="301" class="sans small">payload specification · file inventory and digests · references</text>
+  <text x="554" y="301" class="sans small">payload specification · file inventory and digests · extensions</text>
 
   <rect x="534" y="324" width="522" height="74" rx="10" fill="#ecfccb" stroke="#65a30d" stroke-width="1.5"/>
   <text x="554" y="349" class="sans body" font-weight="700">Payload layer</text>

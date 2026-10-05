@@ -1,11 +1,19 @@
 # Agent Package Specification
 
-This repository contains a [draft proposal for packaging and distributing agent
-Skills and Plugins as OCI artifacts](spec/agent-package.md).
+This repository proposes a standard way to package and distribute **agent
+skills and agent plugins as OCI artifacts**. The aim is to give publishers,
+registries, marketplaces, and agent hosts a common distribution format that
+works with existing OCI tooling for versioning, signing, verification, and
+promotion.
 
-The proposal defines an OCI-based distribution envelope. It does not redefine
-the internal formats of Skills or Plugins. Media types, namespace ownership,
-and other open design questions remain provisional until they are standardized.
+The [draft specification](spec/agent-package.md) preserves the native Skill or
+Plugin files and adds an OCI manifest, package metadata, and a verifiable file
+inventory around them. A Skill or Plugin package is an OCI artifact; it does
+not need to be a container image that runs an application.
+
+**This is a proposal for community review, not an adopted standard.** Feedback
+and implementation experience are welcome. Media types, namespace ownership,
+and other design details remain provisional.
 
 ![A native Skill or Plugin directory packaged unchanged inside an OCI artifact, with a package config and manifest artifact type](docs/images/agent-package-overview.svg)
 
@@ -17,18 +25,20 @@ and distribution metadata around those unchanged files.
 
 ## Why package Skills and Plugins?
 
-### Build a singular release artifact
+### Build one verifiable release artifact
 
 A Skill or Plugin is normally authored as a directory containing instructions,
 metadata, scripts, references, assets, hooks, or other related files. Source
-control is the right place to develop those files, but a release should identify
-exactly which files belong together.
+control is the right place to develop those files, but a repository branch or
+directory can change. Publishers and consumers need to identify exactly which
+files belong to a particular release.
 
 An explicit build step creates one immutable, versioned distribution unit. A
 marketplace, scanner, installer, and user can then operate on the same output.
-The artifact can be validated, signed, approved, promoted, installed, rolled
-back, and revoked without reconstructing a release from a mutable branch or
-repository directory.
+The artifact can be validated, signed, approved, promoted, installed, and
+rolled back by digest without reconstructing a release from a mutable branch
+or repository directory. Consumers can also apply revocation policy to a
+specific artifact digest.
 
 Local source-based development remains useful. This proposal separates that
 authoring workflow from managed distribution; it does not replace it.
@@ -37,8 +47,9 @@ authoring workflow from managed distribution; it does not replace it.
 
 A standalone archive can carry the files, but it does not by itself provide a
 shared model for naming, versioning, discovery, signatures, or attestations.
-OCI supplies that surrounding model through content-addressed digests, registry
-distribution, typed manifests, and referrers.
+The Open Container Initiative (OCI) supplies that surrounding model through
+content-addressed digests, registry distribution, typed manifests, and
+referrers that associate signatures and attestations with an artifact.
 
 The proposed artifacts still carry ordinary Skill or Plugin files in a
 compressed archive. OCI provides the envelope around those files so existing
@@ -146,7 +157,7 @@ verification, and installation.
 
 ## Scope
 
-The proposal standardizes the packaging and distribution boundary. It does not
+The proposal aims to standardize the packaging and distribution boundary. It does not
 redefine the internal semantics of the Agent Skills or Agent Plugins formats,
 mandate a host-specific installation directory, or define a universal runtime
 permission model.
@@ -174,9 +185,14 @@ model for both Skills and Plugins.
 
 ## Status
 
-This work is a draft for community review. It is not an adopted standard, and
-implementations should not assume that provisional names or structures are
-stable.
+This work is an initial draft for community review. Implementations should not
+assume that provisional names or structures are stable. The repository is a
+place to discuss the design, test interoperability, and improve the proposal.
+
+The long-term goal is a specification maintained by the community under an
+appropriate open governance model. No standards body or future governance
+home has been selected. See [GOVERNANCE.md](GOVERNANCE.md) for the current
+draft-stage process.
 
 ## Provide feedback
 
