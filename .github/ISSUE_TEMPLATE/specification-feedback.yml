@@ -1,8 +1,6 @@
 name: Specification feedback
 description: Propose a clarification or technical change to the draft specification
 title: "[Feedback]: "
-labels:
-  - feedback
 body:
   - type: dropdown
     id: category
